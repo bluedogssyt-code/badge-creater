@@ -60,7 +60,7 @@ local function make(i, badgeId)
 
     coroutine.wrap(function()
         while task.wait() do
-            local speed = 400 * math.min(i/20,1)
+            local speed = 1000 * math.min(i/20,1)
             part.Velocity = -part.CFrame.LookVector * speed
         end
     end)()
