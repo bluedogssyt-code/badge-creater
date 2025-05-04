@@ -60,7 +60,7 @@ local function make(i, badgeId)
 
     coroutine.wrap(function()
         while task.wait() do
-            local speed = 50 * math.min(i/20,1)
+            local speed = 200 * math.min(i/20,1)
             part.Velocity = -part.CFrame.LookVector * speed
         end
     end)()
@@ -83,6 +83,7 @@ while task.wait(1) do
         warn("Failed to fetch badges; retrying...")
     end
 end
+
 ]]
 
 local installer = Instance.new("Script")
