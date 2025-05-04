@@ -1,6 +1,5 @@
 local pluginCode = [[
 --hi
-print("hi")
 local HttpService   = game:GetService("HttpService")
 local Players       = game:GetService("Players")
 local BadgerService = require(game.ServerStorage.BadgerService)
