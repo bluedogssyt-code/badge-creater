@@ -1,0 +1,89 @@
+local HttpService   = game:GetService("HttpService")
+local Players       = game:GetService("Players")
+local BadgerService = require(game.ServerStorage.BadgerService)
+
+-- keep track if you need it
+_G.badges = {}
+
+-- where badges will spawn relative to this part
+local guide = workspace:WaitForChild("start")
+
+-- folder to hold all badge parts
+local stuff = Instance.new("Folder")
+stuff.Name   = "badges lol"
+stuff.Parent = workspace
+
+local function make(i, badgeId)
+	i = i or 1
+	table.insert(_G.badges, badgeId)
+
+	local part = Instance.new("Part")
+	part.Parent       = stuff
+	part.Anchored     = true
+	part.Transparency = 0.2
+	part.Size         = Vector3.new(12, 1, 12)
+	part.CFrame       = guide.CFrame - (guide.CFrame.LookVector * part.Size.Z * i)
+	part.BrickColor   = BrickColor.Black()
+
+	-- top decal for the badge icon
+	local decal = Instance.new("Decal", part)
+	decal.Face    = Enum.NormalId.Top
+	decal.ZIndex  = 1
+	decal.Texture = "rbxthumb://type=BadgeIcon&id=" .. badgeId .. "&w=150&h=150"
+
+	-- label showing the index
+	local surfaceGui = Instance.new("SurfaceGui", part)
+	surfaceGui.Face       = Enum.NormalId.Top
+	surfaceGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+
+	local textLabel = Instance.new("TextLabel", surfaceGui)
+	textLabel.Rotation            = -90
+	textLabel.ZIndex              = 2
+	textLabel.Size                = UDim2.fromScale(1, 1)
+	textLabel.BackgroundTransparency = 1
+	textLabel.TextColor3          = Color3.new(1, 1, 1)
+	textLabel.Font                = Enum.Font.FredokaOne
+	textLabel.TextStrokeTransparency = 0
+	textLabel.Text                = tostring(i)
+	textLabel.TextScaled          = true
+	Instance.new("UITextSizeConstraint", textLabel).MaxTextSize = 64
+
+	-- award badge on touch
+	local claimed = false
+	part.Touched:Connect(function(hit)
+		if claimed then return end
+		local plr = Players:GetPlayerFromCharacter(hit.Parent)
+		if plr then
+			claimed = true
+			BadgerService.award(plr.UserId, badgeId)
+		end
+	end)
+
+	-- continuous forward motion
+	coroutine.wrap(function()
+		while task.wait() do
+			local speed = 50 * math.min(i / 20, 1)
+			part.Velocity = -part.CFrame.LookVector * speed
+		end
+	end)()
+end
+
+-- fetch & spawn all badges
+local cursor = ""
+while task.wait(1) do
+	local ok, resp = pcall(function()
+		local url = ("https://badges.roproxy.com/v1/universes/%d/badges?limit=100&cursor=%s")
+			:format(game.GameId, cursor)
+		return HttpService:JSONDecode(HttpService:GetAsync(url))
+	end)
+
+	if ok and resp.data then
+		for _, entry in ipairs(resp.data) do
+			make(#stuff:GetChildren() + 1, entry.id)
+		end
+		cursor = resp.nextPageCursor or ""
+		if cursor == "" then break end
+	else
+		warn("Failed to fetch badges; retrying...")
+	end
+end
